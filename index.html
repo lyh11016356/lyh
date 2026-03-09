@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>舂米歌 - 节奏编创工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            padding: 20px;
+            /* 核心修改：用整张封面图作为背景 */
+            background: url('chongmi_cover.png') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        /* 主容器 - 半透明悬浮，突出操作区 */
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.92); /* 半透明白底，兼顾美观与可读性 */
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 3px 20px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 2; /* 确保操作区在封面元素上层 */
+        }
+        /* 标题区 - 替换为封面同款“舂米歌”字体风格 */
+        h1 {
+            color: #8b5a2b; /* 封面标题棕褐色 */
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 25px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            text-shadow: 2px 2px 3px rgba(0,0,0,0.1);
+        }
+        /* 乐器选择区 */
+        .inst-select {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .inst-select h3 {
+            color: #8b5a2b;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .inst-btns {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .inst-btn {
+            padding: 10px 25px;
+            border: 2px solid #d9b38c;
+            border-radius: 8px;
+            background: #fff0d9;
+            font-size: 16px;
+            color: #8b5a2b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .inst-btn.active {
+            background: #d9b38c;
+            color: white;
+            border-color: #8b5a2b;
+        }
+        /* 音符选择区 */
+        .note-select {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .note-select h3 {
+            color: #8b5a2b;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .note-btns {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .note-btn {
+            width: 90px;
+            height: 80px;
+            border: 2px solid #d9b38c;
+            border-radius: 8px;
+            background: #fff0d9;
+            font-size: 16px;
+            color: #8b5a2b;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .note-btn:hover {
+            background: #d9b38c;
+            color: white;
+        }
+        .note-icon {
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 1;
+            position: relative;
+        }
+        /* 八分音符（双X）下划线样式 */
+        .eight-note {
+            position: relative;
+            display: inline-block;
+            letter-spacing: 2px;
+        }
+        .eight-note::after {
+            content: '';
+            position: absolute;
+            width: 35px;
+            height: 1px;
+            background: #8b5a2b;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .note-btn:hover .eight-note::after {
+            background: white;
+        }
+        /* 编创区域 */
+        .create-area {
+            margin-bottom: 25px;
+        }
+        .create-area h3 {
+            color: #8b5a2b;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .rhythm-box {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            background: #fff9e8;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            min-height: 100px;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #d9b38c;
+        }
+        .rhythm-item {
+            width: 80px;
+            height: 70px;
+            border: 2px solid #d9b38c;
+            border-radius: 6px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #8b5a2b;
+            font-weight: bold;
+            line-height: 1;
+            position: relative;
+        }
+        /* 编创台八分音符（双X）下划线 */
+        .rhythm-item.eight::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 2px;
+            background: #d9b38c;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        /* 控制按钮 */
+        .control-btns {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 0;
+        }
+        .ctrl-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .play-btn {
+            background: #8cc269;
+            color: white;
+        }
+        .play-btn:hover {
+            background: #6da83e;
+        }
+        .clear-btn {
+            background: #e8836e;
+            color: white;
+        }
+        .clear-btn:hover {
+            background: #d45a41;
+        }
+        .show-btn {
+            background: #f5c145;
+            color: white;
+        }
+        .show-btn:hover {
+            background: #e0a800;
+        }
+        /* 成果展示区 */
+        .result-area {
+            display: none;
+            padding: 20px;
+            background: #fff0d9;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .result-area.show {
+            display: block;
+        }
+        .result-area h3 {
+            color: #8b5a2b;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .result-content {
+            font-size: 32px;
+            color: #8b5a2b;
+            font-weight: bold;
+            letter-spacing: 10px;
+            line-height: 2;
+        }
+        /* 成果区八分音符（双X）下划线 */
+        .result-eight {
+            position: relative;
+            display: inline-block;
+            letter-spacing: 4px;
+        }
+        .result-eight::after {
+            content: '';
+            position: absolute;
+            width: 45px;
+            height: 2px;
+            background: #8b5a2b;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <!-- 核心操作容器 -->
+    <div class="container">
+        <!-- 封面标题：舂米歌 -->
+        <h1>舂 米 歌</h1>
+
+        <!-- 乐器选择区：三角铁/双响筒/沙锤 -->
+        <div class="inst-select">
+            <h3>选择演奏乐器</h3>
+            <div class="inst-btns">
+                <button class="inst-btn active" data-inst="triangle">三角铁</button>
+                <button class="inst-btn" data-inst="clapper">双响筒</button>
+                <button class="inst-btn" data-inst="maraca">沙锤</button>
+            </div>
+        </div>
+
+        <!-- 音符选择区-简谱形式 -->
+        <div class="note-select">
+            <h3>选择音符/休止符</h3>
+            <div class="note-btns">
+                <button class="note-btn" data-note="4" data-type="four">
+                    <span class="note-icon">X</span>
+                    <span>四分音符</span>
+                </button>
+                <button class="note-btn" data-note="8" data-type="eight">
+                    <span class="note-icon eight-note">XX</span>
+                    <span>八分音符</span>
+                </button>
+                <button class="note-btn" data-note="0" data-type="rest">
+                    <span class="note-icon">0</span>
+                    <span>休止符</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 编创区域 -->
+        <div class="create-area">
+            <h3>我的节奏编创台</h3>
+            <div class="rhythm-box" id="rhythmBox"></div>
+        </div>
+
+        <!-- 控制按钮 -->
+        <div class="control-btns">
+            <button class="ctrl-btn play-btn" id="playBtn">播放节奏</button>
+            <button class="ctrl-btn clear-btn" id="clearBtn">清空重编</button>
+            <button class="ctrl-btn show-btn" id="showBtn">展示成果</button>
+        </div>
+
+        <!-- 成果展示区 -->
+        <div class="result-area" id="resultArea">
+            <h3>我的编创成果</h3>
+            <div class="result-content" id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let rhythmList = [];
+        let audioContext = null;
+        let isPlaying = false;
+        const BEAT_TIME = 1000; // 60速节拍，一拍=1000ms
+        let currentInst = 'triangle';
+
+        // 乐器音色参数配置
+        const instConfig = {
+            triangle: { four: 1200, eight: 1800 },
+            clapper: { four: 200, eight: 450 },
+            maraca: { four: 300, eight: 500 }
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 乐器切换
+            const instBtns = document.querySelectorAll('.inst-btn');
+            instBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    instBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentInst = this.dataset.inst;
+                });
+            });
+
+            // 音符选择
+            const noteBtns = document.querySelectorAll('.note-btn');
+            const rhythmBox = document.getElementById('rhythmBox');
+            noteBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const noteType = this.dataset.type;
+                    const noteCode = this.dataset.note;
+                    addRhythm(noteType, noteCode, rhythmBox);
+                });
+            });
+
+            // 控制按钮
+            document.getElementById('playBtn').addEventListener('click', playRhythm);
+            document.getElementById('clearBtn').addEventListener('click', clearRhythm);
+            document.getElementById('showBtn').addEventListener('click', showResult);
+        });
+
+        // 添加节奏到编创台
+        function addRhythm(type, code, box) {
+            const item = document.createElement('div');
+            item.className = `rhythm-item ${type === 'eight' ? 'eight' : ''}`;
+            if (type === 'four') item.textContent = 'X';
+            else if (type === 'eight') item.textContent = 'XX';
+            else item.textContent = '0';
+            item.dataset.code = code;
+            box.appendChild(item);
+            rhythmList.push({type, code});
+        }
+
+        // 播放单个乐器音
+        function playTone(freq) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.type = currentInst === 'clapper' ? 'square' : 'sine';
+            oscillator.frequency.value = freq;
+            gainNode.gain.value = 0.5;
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.25);
+        }
+
+        // 播放节奏（60速标准）
+        function playRhythm() {
+            if (rhythmList.length === 0) {
+                alert('请先编创节奏哦！');
+                return;
+            }
+            if (isPlaying) return;
+            isPlaying = true;
+
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            let index = 0;
+            const { four, eight } = instConfig[currentInst];
+
+            const playNext = () => {
+                if (index >= rhythmList.length) {
+                    isPlaying = false;
+                    return;
+                }
+                const {type, code} = rhythmList[index];
+                if (code !== '0') {
+                    if (type === 'four') {
+                        playTone(four);
+                    } else if (type === 'eight') {
+                        playTone(eight);
+                        setTimeout(() => playTone(eight), BEAT_TIME / 2);
+                    }
+                }
+                index++;
+                setTimeout(playNext, BEAT_TIME);
+            };
+            playNext();
+        }
+
+        // 清空编创台
+        function clearRhythm() {
+            const rhythmBox = document.getElementById('rhythmBox');
+            rhythmBox.innerHTML = '';
+            rhythmList = [];
+            isPlaying = false;
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            document.getElementById('resultArea').classList.remove('show');
+        }
+
+        // 展示编创成果
+        function showResult() {
+            if (rhythmList.length === 0) {
+                alert('请先完成节奏编创哦！');
+                return;
+            }
+            const resultArea = document.getElementById('resultArea');
+            const resultContent = document.getElementById('resultContent');
+            let resultHtml = '';
+            rhythmList.forEach(item => {
+                if (item.type === 'four') {
+                    resultHtml += 'X';
+                } else if (item.type === 'eight') {
+                    resultHtml += '<span class="result-eight">XX</span>';
+                } else {
+                    resultHtml += '0';
+                }
+            });
+            resultContent.innerHTML = resultHtml;
+            resultArea.classList.add('show');
+        }
+    </script>
+</body>
+</html>
